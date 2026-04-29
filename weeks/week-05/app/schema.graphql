@@ -1,1 +1,19 @@
-# В этом месте вам необходимо: опишите GraphQL схему
+type Profile {
+  id: ID!
+  name: String!
+  phone: String!
+}
+
+type Query {
+  profiles: [Profile!]!
+  profile(id: ID!): Profile
+}
+
+type Mutation {
+  createProfile(input: CreateProfileInput!): Profile!
+}
+
+input CreateProfileInput {
+  name: String!
+  phone: String!
+}

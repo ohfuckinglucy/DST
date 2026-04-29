@@ -8,6 +8,10 @@ REST API всем хорош, но иногда нам нужна максима
 `variants/<GROUP>/<STUDENT_ID>/week-07.json`
 Вам понадобится название сервиса и метода из варианта.
 
+```bash
+python3 -m grpc_tools.protoc -I./proto --python_out=. --grpc_python_out=. ./proto/service.proto
+```
+
 ## Что нужно сделать
 1. **Описать контракт (.proto)**:
    - В папке `proto/` создайте файл `service.proto`.
