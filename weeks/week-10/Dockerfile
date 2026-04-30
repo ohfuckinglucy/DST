@@ -1,13 +1,24 @@
-# В этом файле вам необходимо использовать multi-stage и заменить порт и путь к приложению по своему варианту
-FROM python:3.11-slim AS builder
+# Stage 1: Сборка зависимостей
+FROM python:3.11-slim as builder
+
 WORKDIR /app
+
+RUN apt-get update && apt-get install -y --no-install-recommends gcc python3-dev
+
 COPY requirements.txt .
-RUN pip install --prefix=/install -r requirements.txt
+RUN pip install --user --no-cache-dir -r requirements.txt
 
 FROM python:3.11-slim
+
 WORKDIR /app
-COPY --from=builder /install /usr/local
+
+COPY --from=builder /root/.local /root/.local
 COPY . .
-# В этом месте вам необходимо заменить на порт из вашего варианта
-EXPOSE 8000
-CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+
+ENV PATH=/root/.local/bin:$PATH
+ENV PYTHONDONTWRITEBYTECODE 1
+ENV PYTHONUNBUFFERED 1
+
+EXPOSE 8278
+
+CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8278"]

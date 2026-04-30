@@ -18,7 +18,7 @@ mutation Create($name: String!, $phone: String!) {
 mutation_vars = {"name": "USSSSSSSSSSSSSS", "phone": "123123"}
 
 try:
-    print("--- Создание профиля ---")
+    print("Создание профиля")
     resp_m = requests.post(url, json=build_payload(mutation_query, mutation_vars))
     print(resp_m.json())
 except Exception as e:
@@ -36,7 +36,7 @@ query {
 """
 
 try:
-    print("\n--- Получение всех профилей ---")
+    print("\nПолучение всех профилей")
     resp_q = requests.post(url, json=build_payload(query_all))
     data = resp_q.json()
     

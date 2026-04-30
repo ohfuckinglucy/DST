@@ -1,2 +1,80 @@
-<!doctype html>
-<!-- В этом месте вам необходимо: реализуйте WebRTC клиент -->
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>WebRTC: orders-s19</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        #chat { background: white; border: 1px solid #ccc; height: 300px; overflow-y: scroll; padding: 10px; margin: 10px 0; }
+        .status { color: #888; font-size: 0.9em; }
+    </style>
+</head>
+<body>
+    <h1>Проект: orders-s19</h1>
+    <div id="chat"></div>
+    
+    <input type="text" id="msgInput" placeholder="Напиши что-нибудь...">
+    <button onclick="sendMsg()">Отправить</button>
+    <hr>
+    <button onclick="initP2P()">Я первый (создать Offer)</button>
+
+    <script>
+        const ws = new WebSocket('ws://localhost:8765');
+        const pc = new RTCPeerConnection({
+            iceServers: [{ urls: 'stun:://google.com' }]
+        });
+        let dataChannel;
+
+        ws.onmessage = async (e) => {
+            const data = JSON.parse(e.data);
+            if (data.offer) {
+                await pc.setRemoteDescription(new RTCSessionDescription(data.offer));
+                const answer = await pc.createAnswer();
+                await pc.setLocalDescription(answer);
+                ws.send(JSON.stringify({ answer }));
+            } else if (data.answer) {
+                await pc.setRemoteDescription(new RTCSessionDescription(data.answer));
+            } else if (data.candidate) {
+                await pc.addIceCandidate(new RTCIceCandidate(data.candidate));
+            }
+        };
+
+        pc.onicecandidate = (e) => {
+            if (e.candidate) ws.send(JSON.stringify({ candidate: e.candidate }));
+        };
+
+        async function initP2P() {
+            dataChannel = pc.createDataChannel("chat-orders");
+            bindEvents(dataChannel);
+            const offer = await pc.createOffer();
+            await pc.setLocalDescription(offer);
+            ws.send(JSON.stringify({ offer }));
+        }
+
+        pc.ondatachannel = (e) => {
+            dataChannel = e.channel;
+            bindEvents(dataChannel);
+        };
+
+        function bindEvents(channel) {
+            channel.onopen = () => addLog("P2P соединение установлено!", "status");
+            channel.onmessage = (e) => addLog("Собеседник: " + e.data);
+        }
+
+        function sendMsg() {
+            const input = document.getElementById('msgInput');
+            if (dataChannel && dataChannel.readyState === 'open') {
+                dataChannel.send(input.value);
+                addLog("Я: " + input.value);
+                input.value = '';
+            }
+        }
+
+        function addLog(msg, className = "") {
+            const div = document.getElementById('chat');
+            div.innerHTML += `<div class="${className}">${msg}</div>`;
+            div.scrollTop = div.scrollHeight;
+        }
+    </script>
+</body>
+</html>
