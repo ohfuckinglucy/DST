@@ -2,39 +2,51 @@ name: ci
 
 on:
   push:
+    branches: [ "main" ]
   pull_request:
+    branches: [ "main" ]
 
 jobs:
   tests:
     runs-on: ubuntu-latest
     env:
-      WEEK: "01"
-      GROUP: "431"
-      STUDENT_ID: "s01"
-      IMAGE_NAME: "В этом месте вам необходимо"
+      WEEK: "14"
+      GROUP: "331"
+      STUDENT_ID: "s19"
+      PROJECT_CODE: "users-s19" 
+      IMAGE_NAME: "users-s19"
+
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
           cache: 'pip'
+          
       - name: Установка зависимостей
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Линтер (необязательно)
+          pip install -r requirements.txt flake8 pytest
+          
+      - name: Линтер (flake8)
         run: |
-          echo "В этом месте вам необходимо: добавить шаг линтера (ruff/flake8)"
+          flake8 . --select=E9,F63,F7,F82 --statistics
+          
       - name: Запуск тестов
         run: make test WEEK=${{ env.WEEK }}
+        
       - name: Сборка Docker-образа
         run: |
-          docker build -t $IMAGE_NAME -f weeks/week-10/Dockerfile weeks/week-10
+          docker build -t ${{ env.IMAGE_NAME }} -f weeks/week-10/Dockerfile .
+          
       - name: Подготовка артефактов
         run: |
           mkdir -p artifacts
-          cp weeks/week-10/report.md artifacts/ || true
-          cp weeks/week-14/README.md artifacts/ || true
+          # Копируем релевантные файлы для 14 недели
+          cp weeks/week-${{ env.WEEK }}/README.md artifacts/ || true
+          cp .github/workflows/ci.yml artifacts/ || true
+          
       - name: Публикация артефактов
         uses: actions/upload-artifact@v4
         with:

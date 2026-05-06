@@ -1,6 +1,16 @@
 replicaCount: 1
+
 image:
-  repository: primer/obraz
   tag: "dev"
+
 service:
-  port: 8000
+  port: 8279
+  type: ClusterIP
+
+resources:
+  requests:
+    cpu: 50m
+    memory: 64Mi
+  limits:
+    cpu: 200m
+    memory: 128Mi

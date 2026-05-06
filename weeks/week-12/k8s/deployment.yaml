@@ -1,1 +1,38 @@
-# В этом месте вам необходимо: Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: likes-app
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: likes-app
+  template:
+    metadata:
+      labels:
+        app: likes-app
+    spec:
+      containers:
+      - name: likes-containerapp
+        image: likes-app:latest
+        ports:
+        - containerPort: 8000
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "250m"
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 5
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8000
+          initialDelaySeconds: 2
+          periodSeconds: 5

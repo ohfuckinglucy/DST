@@ -1,6 +1,21 @@
+appName: logs-app
+containerName: logs-container
+
 replicaCount: 1
+
 image:
-  repository: primer/obraz
+  repository: logs-s19-app
   tag: "latest"
+  pullPolicy: IfNotPresent
+
 service:
-  port: 8000
+  type: ClusterIP
+  port: 8279
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 128Mi
+  limits:
+    cpu: 500m
+    memory: 256Mi
