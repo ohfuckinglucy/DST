@@ -21,7 +21,7 @@ current_id: int = 1
 def get_all_profiles():
     return list(profiles_db.values())
 
-# POST - жобалвяет в список профилей
+# POST - добавляет в список профилей
 @app.post("/profiles", response_model=ProfileResponse, status_code=status.HTTP_201_CREATED)
 def create_profile(profile: ProfileCreate):
     global current_id
@@ -34,10 +34,9 @@ def create_profile(profile: ProfileCreate):
     
     profiles_db[current_id] = new_profile
     current_id += 1
-    
     return new_profile
 
-# GET - получает по индексу
+# GET - получает по id
 @app.get("/profiles/{profile_id}", response_model=ProfileResponse)
 def get_profile(profile_id: int):
     if profile_id not in profiles_db:
@@ -47,7 +46,7 @@ def get_profile(profile_id: int):
         )
     return profiles_db[profile_id]
 
-# PUT - меняет по индексу
+# PUT - обновляет профиль по id
 @app.put("/profiles/{profile_id}", response_model=ProfileResponse)
 def update_profile(profile_id: int, profile_update: ProfileCreate):
     if profile_id not in profiles_db:
@@ -65,7 +64,7 @@ def update_profile(profile_id: int, profile_update: ProfileCreate):
     profiles_db[profile_id] = updated_profile
     return updated_profile
 
-# DELETE - удаляет по индексу
+# DELETE - удаляет профиль по id
 @app.delete("/profiles/{profile_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_profile(profile_id: int):
     if profile_id not in profiles_db:
