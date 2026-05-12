@@ -1,7 +1,4 @@
-
-# Реализуйте здесь простую машину состояний (State Machine).
-# Функция должна принимать текущее состояние и событие,
-# и возвращать следующее состояние.
+import time
 
 def next_state(state: str, event: str) -> str:
     transitions = {
@@ -11,9 +8,8 @@ def next_state(state: str, event: str) -> str:
     }
     return transitions.get((state, event), 'CANCELLED')
 
-
 def compensate(state: str) -> str:
-    if state == 'NEW':
+    if state in ('NEW', 'PAID'):
         return 'CANCELLED'
     return state
 
@@ -37,6 +33,8 @@ def release_with_retry(max_retries: int = 3) -> bool:
         if success:
             return True
         print(f"Попытка {attempt + 1} не удалась, повторяем...")
+        if attempt < max_retries - 1:
+            time.sleep(1 << attempt)
     return False
 
 def cancel_reserve() -> bool:
