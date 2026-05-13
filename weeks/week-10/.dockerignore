@@ -1,3 +1,9 @@
 .venv
 __pycache__
 *.pyc
+.git
+.env
+*.md
+tests/
+starter/
+.gitignore

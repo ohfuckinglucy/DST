@@ -4,7 +4,7 @@ import grpc
 import service_pb2
 import service_pb2_grpc
 
-ITERATIONS = 1000
+ITERATIONS = 100000
 
 def run_rest_bench():
     print("REST benchmark...")
