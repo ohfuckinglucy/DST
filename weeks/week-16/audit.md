@@ -1,37 +1,47 @@
 # Security Audit Report: devices-s19
 
-**Student:** s19  
-**Group:** 331  
-**Project Code:** devices-s19  
+**Student:** s19
+**Group:** 331
+**Project Code:** devices-s19
 
 ## 1. Чек-лист OWASP Top 10
 
 | ID | Уязвимость | Статус | Комментарий |
 |----|------------|--------|-------------|
-| 1  | **Broken Access Control** | Risk | Необходимо проверять права доступа пользователя к ресурсу `/api/devices`. |
-| 2  | **Cryptographic Failures** | Pass | Пароли хэшируются перед сохранением в БД. |
-| 3  | **Injection** | Pass | Используется ORM, что защищает от SQL-инъекций. Входные данные валидируются. |
-| 4  | **Insecure Design** | Risk | Рекомендуется добавить Rate Limiting для защиты от brute-force. |
-| 5  | **Security Misconfiguration** | Risk | Необходимо убедиться, что все секреты вынесены в переменные окружения (.env). |
-| 6  | **Vulnerable Components** | Pass | Зависимости регулярно обновляются. |
-| 7  | **Authentication Failures** | Risk | JWT токены должны иметь ограниченное время жизни. |
-| 8  | **Software & Data Integrity** | Pass | Сборка происходит в изолированном CI/CD окружении. |
-| 9  | **Security Logging** | Risk | Необходимо логировать попытки несанкционированного доступа. |
+| 1  | **Broken Access Control** | Risk | В эндпоинтах `/api/devices` нет проверки принадлежности ресурса пользователю. |
+| 2  | **Cryptographic Failures** | Pass | Пароли хэшируются (bcrypt) перед сохранением. |
+| 3  | **Injection** | Pass | Pydantic валидирует все входные данные, ORM защищает от SQL-инъекций. |
+| 4  | **Insecure Design** | Risk | Нет rate limiting — API уязвим для brute-force атак. |
+| 5  | **Security Misconfiguration** | Risk | `SECRET_KEY` и `DATABASE_URL` жестко закодированы в `main.py`. |
+| 6  | **Vulnerable Components** | Pass | Все зависимости зафиксированы по версиям в `requirements.txt`. |
+| 7  | **Authentication Failures** | Risk | JWT токены не имеют expires и refresh механизма. |
+| 8  | **Software & Data Integrity** | Pass | CI/CD собирает Docker-образ в изолированной среде. |
+| 9  | **Security Logging** | Risk | Нет логов неудачных аутентификаций и доступа к ресурсам. |
 | 10 | **SSRF** | Pass | Функционал загрузки по URL отсутствует. |
 
 ## 2. Найденные проблемы и рекомендации
 
-### 1. Риск утечки секретов (Hardcoded Secrets)
-**Severity:** High  
-**Description:** В учебных целях некоторые конфигурации могут храниться в коде. В продакшене это недопустимо.  
-**Remediation:** Использовать переменные окружения (`.env`) для хранения `SECRET_KEY`, `DATABASE_URL` и других чувствительных данных. Добавить `.env` в `.gitignore`.
+### Finding 1: Hardcoded Secrets в коде
+- **Severity:** High
+- **Location:** `weeks/week-11/app/main.py`, `docker-compose.yml`
+- **Description:** Параметры подключения к БД (`DB_PASSWORD=items_pass`) хранятся в открытом виде в docker-compose.yml.
+- **Impact:** При публикации репозитория злоумышленник получит доступ к продакшен-базе.
+- **Remediation:** Использовать `.env` файл и переменные окружения. Добавить `.env` в `.gitignore`.
 
-### 2. Контроль доступа (Broken Access Control)
-**Severity:** Medium  
-**Description:** Эндпоинты API должны проверять, принадлежит ли запрашиваемый ресурс (`devices`) текущему пользователю.  
-**Remediation:** Добавить middleware или проверку в контроллере: `if device.owner_id != current_user.id: raise 403`.
+### Finding 2: Отсутствие Rate Limiting
+- **Severity:** Medium
+- **Location:** `weeks/week-11/infra/nginx.conf` (отсутствует)
+- **Description:** API Gateway (Nginx) не имеет ограничений на количество запросов с одного IP.
+- **Impact:** Возможен brute-force паролей и DDoS атак.
+- **Remediation:** Добавить в nginx.conf:
+```nginx
+limit_req_zone $binary_remote_addr zone=api:10m rate=30r/s;
+limit_req zone=api burst=50 nodelay;
+```
 
-### 3. Отсутствие лимитов запросов (Rate Limiting)
-**Severity:** Medium  
-**Description:** API открыт для бесконечного числа запросов, что позволяет проводить атаки перебором.  
-**Remediation:** Внедрить ограничение на количество запросов с одного IP (например, 100 req/min).
+### Finding 3: Отсутствие проверки прав доступа
+- **Severity:** Medium
+- **Location:** `weeks/week-11/app/main.py`
+- **Description:** Любой пользователь может получить/изменить/удалить любой ресурс без проверки владельца.
+- **Impact:** Утечка данных других пользователей.
+- **Remediation:** Добавить middleware аутентификации и проверку `resource.owner_id == current_user.id`.
