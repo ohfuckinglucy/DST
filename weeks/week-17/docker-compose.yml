@@ -24,6 +24,7 @@ services:
     container_name: users-svc-s19
     expose:
       - "8090"
+      - "50051"
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8090/health"]
       interval: 10s

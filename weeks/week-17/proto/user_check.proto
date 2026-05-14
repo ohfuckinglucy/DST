@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package usercheck;
+
+service UserChecker {
+  rpc CheckUserExists (UserExistsRequest) returns (UserExistsResponse);
+}
+
+message UserExistsRequest {
+  string username = 1;
+}
+
+message UserExistsResponse {
+  bool exists = 1;
+}

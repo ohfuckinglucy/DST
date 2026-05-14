@@ -10,12 +10,13 @@ RUN apt-get update && apt-get install -y curl && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
 COPY --from=builder /root/.local /root/.local
-COPY main.py .
+COPY main.py user_check_pb2.py user_check_pb2_grpc.py ./
 
 ENV PATH=/root/.local/bin:$PATH
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
 EXPOSE 8090
+EXPOSE 50051
 
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8090"]

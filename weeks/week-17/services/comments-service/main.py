@@ -1,8 +1,19 @@
+import os
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from typing import List
 
+import grpc
+from user_check_pb2 import UserExistsRequest
+from user_check_pb2_grpc import UserCheckerStub
+
 app = FastAPI(title="Comments Service", version="1.0.0")
+
+USERS_GRPC_HOST = os.getenv("USERS_GRPC_HOST", "users-svc-s19")
+USERS_GRPC_PORT = os.getenv("USERS_GRPC_PORT", "50051")
+
+grpc_channel = grpc.insecure_channel(f"{USERS_GRPC_HOST}:{USERS_GRPC_PORT}")
+grpc_stub = UserCheckerStub(grpc_channel)
 
 class CommentCreate(BaseModel):
     author: str
@@ -22,6 +33,16 @@ def list_comments():
 @app.post("/comments", response_model=CommentResponse, status_code=201)
 def create_comment(payload: CommentCreate):
     global counter
+
+    try:
+        resp = grpc_stub.CheckUserExists(UserExistsRequest(username=payload.author))
+        if not resp.exists:
+            raise HTTPException(status_code=400, detail=f"User '{payload.author}' does not exist")
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=503, detail=f"Users service unavailable: {e}")
+
     record = {"id": counter, "author": payload.author, "text": payload.text}
     db[counter] = record
     counter += 1
